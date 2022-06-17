@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/csv"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,7 +28,7 @@ func main() {
 }
 
 func setupRoutes(r *gin.Engine) {
-	r.GET("/cases/new/country/:country", setRoute1)
+	r.GET("/cases/new/country/:country", setRoute1) //1. GET /cases/new/country/:country?date=2020-12-18 {after the country ? there is a perameter that what we have to find in that is compulsary}
 	r.GET("/cases/total/country/:from_date", setRoute2)
 
 }
@@ -90,7 +92,8 @@ func getNewCaseStatus(country string, date string, records [][]string) []string 
 
 func setRoute2(c *gin.Context) {
 	// country, ok := c.Params.Get("country")
-	date, ok := c.GetQuery("date")
+	date, ok := c.Params.Get("from_date")
+	fmt.Println(date, "DATE")
 
 	records := readCsvFile("./full_data.csv")
 	total_cases := getTotalCasesStatus(date, records)
@@ -115,15 +118,21 @@ func setRoute2(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-func getTotalCasesStatus(date string, records [][]string) []string {
-	var all_cases []string
+func getTotalCasesStatus(date string, records [][]string) []int64 {
+	var total_cases []int64
+	var total int64
 
 	for i := 0; i < len(records); i++ {
-		if records[i][0] == date {
-			all_cases = append(all_cases, records[i][4])
+		if records[i][0] >= date {
+			conv, _ := strconv.ParseInt(records[i][4], 0, 8)
+			// total_cases = append(total_cases, records[i][4])
+			total = total + conv
 		}
+
 	}
-	return all_cases
+	total_cases = append(total_cases, total)
+
+	return total_cases
 }
 
 // var full_data struct {
