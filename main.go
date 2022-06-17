@@ -60,7 +60,7 @@ func setRoute1(c *gin.Context) {
 
 	if ok == false {
 		res := gin.H{
-			"error": "file_is_missing",
+			"error": "invalid_date",
 		}
 		c.JSON(http.StatusOK, res)
 		return
@@ -100,7 +100,7 @@ func setRoute2(c *gin.Context) {
 
 	if ok == false {
 		res := gin.H{
-			"error": "file_is_missing",
+			"error": "invalid_date",
 			"date":  date,
 		}
 		c.JSON(http.StatusOK, res)
