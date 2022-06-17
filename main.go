@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/csv"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -54,13 +53,17 @@ func setRoute1(c *gin.Context) {
 
 	records := readCsvFile("./full_data.csv")
 	country, ok := c.Params.Get("country")
-	date, ok := c.GetQuery("date")
+	date, date_err := c.GetQuery("date")
 
-	cases := getNewCaseStatus(country, date, records)
+	if date_err == false {
+		date = "all"
+	}
+
+	new_cases := getNewCaseStatus(country, date, records)
 
 	if ok == false {
 		res := gin.H{
-			"error": "invalid_date",
+			"error": "enter country properly",
 		}
 		c.JSON(http.StatusOK, res)
 		return
@@ -69,33 +72,48 @@ func setRoute1(c *gin.Context) {
 		city := ""
 	*/
 	res := gin.H{ //response
-		"new_case": cases,
+		"new_case": new_cases,
 		"date":     date,
 		"country":  country,
-		"count":    len(cases),
+		// "count":    len(new_cases),
 	}
 	c.JSON(http.StatusOK, res)
 }
 
-func getNewCaseStatus(country string, date string, records [][]string) []string {
+func getNewCaseStatus(country string, date string, records [][]string) int64 {
 
-	var new_cases []string
+	var total int64
+	var newcases int64
 	for i := 0; i < len(records); i++ {
-		if records[i][0] == date && records[i][1] == country {
-			// new_cases = records[i][2]
-			new_cases = append(new_cases, records[i][2])
-			break
+		if date != "all" {
+
+			if records[i][0] == date && records[i][1] == country {
+				// new_cases = records[i][2]
+				newcases, _ = strconv.ParseInt(records[i][2], 0, 8)
+				// new_cases = append(new_cases, records[i][2])
+
+			}
+		} else {
+			if records[i][1] == country {
+				newcases, _ = strconv.ParseInt(records[i][2], 0, 8)
+				total = newcases + total
+			}
 		}
 	}
-	return new_cases
+
+	if date != "all" {
+		return newcases
+	} else {
+		return total
+	}
+
 }
 
 func setRoute2(c *gin.Context) {
-	// country, ok := c.Params.Get("country")
-	date, ok := c.Params.Get("from_date")
-	fmt.Println(date, "DATE")
-
 	records := readCsvFile("./full_data.csv")
+
+	date, ok := c.Params.Get("from_date")
+
 	total_cases := getTotalCasesStatus(date, records)
 
 	if ok == false {
@@ -111,7 +129,8 @@ func setRoute2(c *gin.Context) {
 	*/
 	res := gin.H{ //response
 		"total_cases": total_cases,
-		"date":        date,
+		// "new_cases":   new_cases,
+		"date": date,
 		// "country":     country,
 		"count": len(total_cases),
 	}
